@@ -1,0 +1,575 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+void main() {
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => CartProvider()),
+        ChangeNotifierProvider(create: (context) => ThemeProvider()),
+      ],
+      child: DihateaShopApp(),
+    ),
+  );
+}
+
+// Models
+class ProdukItem {
+  final String id;
+  final String name;
+  final String description;
+  final double price;
+
+  ProdukItem({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.price,
+  });
+}
+
+// Providers
+class CartProvider extends ChangeNotifier {
+  final List<ProdukItem> _cartItems = [];
+  
+  List<ProdukItem> get cartItems => _cartItems;
+  
+  void addToCart(ProdukItem item) {
+    _cartItems.add(item);
+    notifyListeners();
+  }
+  
+  void removeFromCart(ProdukItem item) {
+    _cartItems.remove(item);
+    notifyListeners();
+  }
+  
+  double get totalPrice => 
+    _cartItems.fold(0, (total, current) => total + current.price);
+}
+
+class ThemeProvider extends ChangeNotifier {
+  bool _isDarkMode = false;
+
+  ThemeData get currentTheme => _isDarkMode 
+    ? _buildDarkTheme() 
+    : _buildLightTheme();
+
+  void toggleTheme() {
+    _isDarkMode = !_isDarkMode;
+    notifyListeners();
+  }
+
+  ThemeData _buildLightTheme() {
+    return ThemeData(
+      primarySwatch: Colors.brown,
+      brightness: Brightness.light,
+      appBarTheme: AppBarTheme(
+        color: Colors.brown[300],
+      ),
+    );
+  }
+
+  ThemeData _buildDarkTheme() {
+    return ThemeData(
+      primarySwatch: Colors.brown,
+      brightness: Brightness.dark,
+      appBarTheme: AppBarTheme(
+        color: Colors.brown[800],
+      ),
+    );
+  }
+}
+
+// Main App
+class DihateaShopApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return MaterialApp(
+          title: 'Brew Haven Coffee Shop',
+          theme: themeProvider.currentTheme,
+          home: MainNavigationScreen(),
+        );
+      },
+    );
+  }
+}
+
+// Main Navigation Screen
+class MainNavigationScreen extends StatefulWidget {
+  @override
+  _MainNavigationScreenState createState() => _MainNavigationScreenState();
+}
+
+class _MainNavigationScreenState extends State<MainNavigationScreen> {
+  int _selectedIndex = 0;
+
+  static final List<Widget> _screens = [
+    HomeScreen(),
+    MenuScreen(),
+    CartScreen(),
+    ProfileScreen(),
+  ];
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: _screens[_selectedIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.coffee), label: 'Menu'),
+          BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Cart'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: Colors.brown[600],
+        unselectedItemColor: Colors.brown[300],
+        onTap: _onItemTapped,
+      ),
+    );
+  }
+}
+
+// Home Screen
+class HomeScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Dihatea and Cake'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.brightness_6),
+            onPressed: () {
+              Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
+            },
+          ),
+        ],
+      ),
+      body: ListView(
+        padding: EdgeInsets.all(16),
+        children: [
+          _buildHeaderSection(),
+          SizedBox(height: 20),
+          _buildSpecialsSection(),
+          SizedBox(height: 20),
+          _buildRewardsSection(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeaderSection() {
+    return Card(
+      elevation: 4,
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Welcome to Dihatea and Cake',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 10),
+            Text(
+              'Semua varian tea dan kue yang selalu dihati!',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.brown[700],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSpecialsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Promo Spesial Hari Ini!',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        SizedBox(height: 10),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              _buildSpecialCard('Dihatea', '\$2.5'),
+              _buildSpecialCard('Softtea', '\$1.5'),
+              _buildSpecialCard('Queen Cake', '\$4.0'),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSpecialCard(String name, String price) {
+    return Container(
+      width: 150,
+      margin: EdgeInsets.only(right: 10),
+      child: Card(
+        elevation: 3,
+        child: Padding(
+          padding: EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                name,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 5),
+              Text(
+                price,
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.brown[700],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRewardsSection() {
+    return Card(
+      elevation: 4,
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Hadiah Spesial Dihatea',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 10),
+            Text(
+              'Setiap satu kali pembelian akan mendapatkan point sebesar 150 poin!. Dapatkan dan gunakan agar lebih hemat lagi!',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.brown[700],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Menu Screen
+class MenuScreen extends StatelessWidget {
+  final List<ProdukItem> _coffeeItems = [
+    ProdukItem(
+      id: '1',
+      name: 'Dihatea',
+      description: 'Tea dengan perpaduan pandan dan green arome yang akan selalu dikenang setiap teguknya!',
+      price: 3 ,
+    ),
+    ProdukItem(
+      id: '2',
+      name: 'Softtea',
+      description: 'Tea alami dengan daun mint yang dibuat dengan sepenuh hati!',
+      price: 2,
+    ),
+    ProdukItem(
+      id: '3',
+      name: 'Liketea',
+      description: 'Tea dengan kombinasi lemon segar untuk hati yang bersemangat!',
+      price: 2.5,
+    ),
+    ProdukItem(
+      id: '4',
+      name: 'Queen Cake',
+      description: 'Keju lumer yang akan membanjiri mulutmu dengan kemanisan hati!',
+      price: 5,
+    ),
+    ProdukItem(
+      id: '5',
+      name: 'Arabicsoft Cake',
+      description: 'Kue rempah yang akan memberikan rasa gembira di hatimu!',
+      price: 3,
+    ),
+    ProdukItem(
+      id: '6',
+      name: 'Origin Cake',
+      description: 'Kue kering yang akan melunturkan kesedihan hatimu!',
+      price: 2.5,
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Menu Pilihan Dihatea and Cake'),
+      ),
+      body: ListView.builder(
+        padding: EdgeInsets.all(16),
+        itemCount: _coffeeItems.length,
+        itemBuilder: (context, index) {
+          return _buildCoffeeItemCard(_coffeeItems[index], context);
+        },
+      ),
+    );
+  }
+
+  Widget _buildCoffeeItemCard(ProdukItem item, BuildContext context) {
+    return Card(
+      elevation: 4,
+      margin: EdgeInsets.only(bottom: 16),
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              item.name,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              item.description,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.brown[700],
+              ),
+            ),
+            SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '\$${item.price.toStringAsFixed(2)}',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.brown[600],
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Provider.of<CartProvider>(context, listen: false)
+                        .addToCart(item);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('${item.name} sudah di keranjang!'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                  child: Text('Lanjut ke keranjang!'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Cart Screen
+class CartScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Pesanan Kamu'),
+      ),
+      body: Consumer<CartProvider>(
+        builder: (context, cartProvider, child) {
+          return cartProvider.cartItems.isEmpty
+              ? _buildEmptyCart()
+              : _buildCartList(cartProvider, context);
+        },
+      ),
+    );
+  }
+
+  Widget _buildEmptyCart() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.shopping_cart_outlined,
+            size: 100,
+            color: Colors.brown[300],
+          ),
+          SizedBox(height: 20),
+          Text(
+            'Kamu belum memesan, yuk segera pesan!',
+            style: TextStyle(
+              fontSize: 20,
+              color: Colors.brown[700],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCartList(CartProvider cartProvider, BuildContext context) {
+    return Column(
+      children: [
+        Expanded(
+          child: ListView.builder(
+            itemCount: cartProvider.cartItems.length,
+            itemBuilder: (context, index) {
+              final item = cartProvider.cartItems[index];
+              return ListTile(
+                title: Text(item.name),
+                subtitle: Text('\$${item.price.toStringAsFixed(2)}'),
+                trailing: IconButton(
+                  icon: Icon(Icons.delete, color: Colors.red),
+                  onPressed: () {
+                    cartProvider.removeFromCart(item);
+                  },
+                ),
+              );
+            },
+          ),
+        ),
+        Padding(
+          padding: EdgeInsets.all(16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Total:',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                '\$${cartProvider.totalPrice.toStringAsFixed(2)}',
+                style: TextStyle(
+                  fontSize: 20,
+                  color: Colors.brown[700],
+                ),
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: EdgeInsets.all(16),
+          child: ElevatedButton(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Pesananmu telah diproses!'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            },
+            child: Text('Selesaikan pesananmu!'),
+            style: ElevatedButton.styleFrom(
+              minimumSize: Size(double.infinity, 50),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// Profile Screen
+class ProfileScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Profile Kamu'),
+      ),
+      body: ListView(
+        padding: EdgeInsets.all(16),
+        children: [
+          Card(
+            elevation: 4,
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  CircleAvatar(
+                    radius: 50,
+                    backgroundColor: Colors.brown[300],
+                    child: Icon(
+                      Icons.person,
+                      size: 50,
+                      color: Colors.white,
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Adul Bedul',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    'bedulinadul@gmail.com',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.brown[700],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(height: 20),
+          Card(
+            child: ListTile(
+              leading: Icon(Icons.loyalty, color: Colors.brown[600]),
+              title: Text('Voucher Kamu'),
+              trailing: Text('300 Poin', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ),
+          Card(
+            child: ListTile(
+              leading: Icon(Icons.settings, color: Colors.brown[600]),
+              title: Text('Account Settings'),
+              trailing: Icon(Icons.chevron_right),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
